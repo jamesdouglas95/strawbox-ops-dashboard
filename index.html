@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StrawBox Ops — Collections & Fulfillment</title>
+<style>
+:root { color-scheme: light;
+  --bg:#f7f6f3; --card:#ffffff; --ink:#1a1a1a; --muted:#6b6b6b; --line:#e6e3dc;
+  --neutral:#3b5b47; --amber:#b45309; --amber-bg:#fef3e2; --red:#b91c1c; --red-bg:#fdecec;
+  --green:#15803d; --green-bg:#e9f7ee; --accent:#2f4f3a; --link:#1d4ed8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:18px 20px 60px}
+a{color:var(--link);text-decoration:none} a:hover{text-decoration:underline}
+h1{font-size:20px;font-weight:700}
+h2{font-size:15px;font-weight:700;margin:26px 0 10px;display:flex;align-items:center;gap:8px}
+.sub{color:var(--muted);font-size:12px}
+.hdr{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.hdr-right{display:flex;gap:8px;align-items:center}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px}
+button:hover{background:#f1efe9}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+button.primary:hover{background:#243e2d}
+button.danger-ok{background:var(--green);color:#fff;border-color:var(--green)}
+button:disabled{opacity:.5;cursor:default}
+.pill{display:inline-block;font-size:11px;font-weight:600;border-radius:99px;padding:2px 8px;white-space:nowrap}
+.pill.neutral{background:#eef2ef;color:var(--neutral)}
+.pill.amber{background:var(--amber-bg);color:var(--amber)}
+.pill.red{background:var(--red-bg);color:var(--red)}
+.pill.green{background:var(--green-bg);color:var(--green)}
+.pill.gray{background:#efefef;color:#555}
+/* tabs */
+.tabs{display:flex;gap:4px;margin-top:16px;border-bottom:1px solid var(--line)}
+.tab{border:none;background:none;border-radius:8px 8px 0 0;padding:10px 16px;font-weight:700;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab:hover{background:#f1efe9}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent);background:none}
+.tab .tp{font-weight:600;font-size:11px;color:var(--muted);margin-left:6px}
+.tab.on .tp{color:var(--accent)}
+/* stat cards */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:16px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.stat .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+.stat .val{font-size:22px;font-weight:750;margin-top:3px}
+.stat .note{font-size:11px;color:var(--muted);margin-top:2px}
+.stat.flag{border-color:var(--red);background:#fffafa}
+.stat.flag .val{color:var(--red)}
+/* aging */
+.aging{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.bucket{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 14px;border-top:4px solid var(--neutral)}
+.bucket.b1,.bucket.b2{border-top-color:var(--amber)}
+.bucket.b3{border-top-color:var(--red);background:#fffafa}
+.bucket .amt{font-size:19px;font-weight:750}
+.bucket.b3 .amt{color:var(--red)}
+.bucket .cnt{font-size:11px;color:var(--muted)}
+/* controls */
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.controls input[type=search]{font:inherit;border:1px solid var(--line);border-radius:8px;padding:6px 10px;min-width:200px;background:#fff}
+.chip{border-radius:99px;font-size:12px;padding:4px 12px}
+.chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+/* table */
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.tblwrap{border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+.tblwrap table{border:none}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);text-align:left;padding:9px 12px;background:#faf9f6;border-bottom:1px solid var(--line);cursor:pointer;user-select:none;white-space:nowrap}
+th.num,td.num{text-align:right}
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr.cust{cursor:pointer}
+tr.cust:hover{background:#faf9f5}
+tr.cust.paidoff td{background:var(--green-bg)}
+tr.cust.expanded{background:#f4f3ee}
+tr.detail>td{background:#fbfaf7;padding:6px 12px 14px}
+.owed{font-weight:700;font-variant-numeric:tabular-nums}
+.caret{display:inline-block;width:14px;color:var(--muted);transition:transform .12s}
+.expanded .caret{transform:rotate(90deg)}
+.contact{font-size:12px;color:var(--muted)}
+.biggest-row td:first-child{box-shadow:inset 3px 0 0 var(--red)}
+/* order sub-cards */
+.ocard{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 12px;margin-top:8px}
+.ocard.paid{background:var(--green-bg);border-color:#bfe3cb}
+.ocard.flagged{background:#fdf0f0;border-color:#f0c9c9}
+.ocard .top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.ocard .onote{font-size:12px;color:var(--muted);margin-top:4px;white-space:pre-wrap}
+.tags{font-size:11px;color:var(--muted)}
+/* action box */
+.act{margin-top:8px;border-top:1px dashed var(--line);padding-top:8px}
+.act .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.act input[type=text]{flex:1;min-width:180px;font:inherit;border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:#fff}
+.act .quick{font-size:12px;padding:4px 9px}
+.preview{margin-top:8px;border:1px solid #d9d4c7;background:#fdfcf7;border-radius:10px;padding:10px 12px}
+.preview .ptitle{font-weight:700;font-size:13px;margin-bottom:4px}
+.preview .impact{font-size:13px;margin-bottom:6px}
+.preview pre{font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#f2f0e9;border-radius:8px;padding:8px;overflow-x:auto;white-space:pre-wrap;word-break:break-word;margin-bottom:8px}
+.preview .warn{color:var(--amber);font-size:12px;margin-bottom:6px}
+.result-ok{color:var(--green);font-weight:600;font-size:13px;margin-top:6px}
+.result-err{color:var(--red);font-size:12px;margin-top:6px;white-space:pre-wrap}
+/* drafts */
+details.drafts{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:0}
+details.drafts>summary{cursor:pointer;padding:12px 14px;font-weight:700;list-style:none;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+details.drafts>summary::before{content:"▸";color:var(--muted)}
+details.drafts[open]>summary::before{content:"▾"}
+.drafts .inner{padding:0 14px 14px}
+/* states */
+.loading,.errbox{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:28px;text-align:center;color:var(--muted);margin-top:16px}
+.errbox{border-color:var(--red);color:var(--red);white-space:pre-wrap;text-align:left}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite;vertical-align:-3px;margin-right:8px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty{color:var(--muted);padding:14px;text-align:center}
+/* print */
+@media print{
+  body{background:#fff;padding:0;font-size:12px}
+  .controls,.act,.hdr-right,.noprint,.tabs{display:none!important}
+  .stat,.bucket,table,.tblwrap,details.drafts{border-color:#bbb;box-shadow:none}
+  tr.detail{display:table-row!important}
+  details.drafts{border:1px solid #bbb}
+  details.drafts>summary::before{content:""}
+  a{color:#000}
+  .stats{grid-template-columns:repeat(5,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div>
+    <h1>🌾 StrawBox Ops — Collections &amp; Fulfillment</h1>
+    <div class="sub" id="asof">Loading…</div>
+  </div>
+  <div class="hdr-right noprint">
+    <button onclick="window.print()">🖨 Print</button>
+  </div>
+</div>
+
+<div class="tabs noprint">
+  <button class="tab on" data-tab="collections">💰 Collections<span class="tp">who owes us</span></button>
+  <button class="tab" data-tab="fulfillment">📦 Fulfillment<span class="tp">what we owe</span></button>
+</div>
+
+<div id="app"><div class="loading"><span class="spin"></span>Pulling every unpaid dollar from Shopify…</div></div>
+<div id="appF" style="display:none"><div class="loading"><span class="spin"></span>Loading fulfillment queue…</div></div>
+
+<script>
+// --- Vercel data bridge: replaces the Cowork MCP bridge with a serverless proxy ---
+window.cowork = window.cowork || {
+  callMcpTool: async function(tool, args){
+    try {
+      const res = await fetch('/api/shopify', {
+        method:'POST', headers:{'content-type':'application/json'},
+        body: JSON.stringify({ tool: tool, args: args })
+      });
+      const json = await res.json();
+      if (!res.ok) return { isError:true, content:[{type:'text', text: (json && json.error) ? json.error : JSON.stringify(json)}] };
+      if (json && json.errors) return { isError:true, content:[{type:'text', text: json.errors.map(function(e){return e.message}).join('\n')}] };
+      return { structuredContent: json };
+    } catch(e){
+      return { isError:true, content:[{type:'text', text:'Network error calling /api/shopify: '+e.message}] };
+    }
+  }
+};
+</script>
+<script>
+"use strict";
+const STORE = "hfkh3g-9q";
+const Q_TOOL = "mcp__bbf8c267-c6fb-4969-9fb3-106be3d8e645__graphql_query";
+const M_TOOL = "mcp__bbf8c267-c6fb-4969-9fb3-106be3d8e645__graphql_mutation";
+const LS_SORT = "sb_ar_sort", LS_FILTER = "sb_ar_filter", LS_DRAFTS_OPEN = "sb_ar_drafts_open";
+
+const ORDERS_Q = `query CollectionsOrders($first: Int!, $after: String) { orders(first: $first, after: $after, query: "financial_status:pending OR financial_status:authorized OR financial_status:partially_paid") { pageInfo { hasNextPage endCursor } nodes { id legacyResourceId name createdAt displayFinancialStatus cancelledAt tags note totalOutstandingSet { shopMoney { amount currencyCode } } totalPriceSet { shopMoney { amount currencyCode } } email phone customer { id displayName defaultEmailAddress { emailAddress } defaultPhoneNumber { phoneNumber } } } } }`;
+const DRAFTS_Q = `query CollectionsDrafts($first: Int!, $after: String) { draftOrders(first: $first, after: $after, query: "status:open OR status:invoice_sent") { pageInfo { hasNextPage endCursor } nodes { id legacyResourceId name status invoiceSentAt createdAt tags note2 totalPriceSet { shopMoney { amount currencyCode } } email customer { id displayName defaultEmailAddress { emailAddress } defaultPhoneNumber { phoneNumber } } } } }`;
+const FORDERS_Q = `query FulfillOrders($first: Int!, $after: String) { orders(first: $first, after: $after, query: "financial_status:paid AND (fulfillment_status:unfulfilled OR fulfillment_status:partial)") { pageInfo { hasNextPage endCursor } nodes { id legacyResourceId name createdAt displayFulfillmentStatus displayFinancialStatus cancelledAt tags note totalPriceSet { shopMoney { amount currencyCode } } email phone customer { id displayName defaultEmailAddress { emailAddress } defaultPhoneNumber { phoneNumber } } fulfillmentOrders(first: 10) { nodes { id status } } } } }`;
+
+// Mutations — validated against Admin schema
+const MUT_MARK_PAID = `mutation MarkPaid($input: OrderMarkAsPaidInput!) { orderMarkAsPaid(input: $input) { order { id displayFinancialStatus } userErrors { field message } } }`;
+const MUT_ORDER_INVOICE = `mutation SendOrderInvoice($orderId: ID!, $email: EmailInput) { orderInvoiceSend(id: $orderId, email: $email) { order { id } userErrors { field message } } }`;
+const MUT_DRAFT_INVOICE = `mutation SendDraftInvoice($id: ID!, $email: EmailInput) { draftOrderInvoiceSend(id: $id, email: $email) { draftOrder { id invoiceSentAt status } userErrors { field message } } }`;
+const MUT_ORDER_NOTE = `mutation UpdateOrderNote($input: OrderInput!) { orderUpdate(input: $input) { order { id note } userErrors { field message } } }`;
+const MUT_DRAFT_NOTE = `mutation UpdateDraftNote($id: ID!, $input: DraftOrderInput!) { draftOrderUpdate(id: $id, input: $input) { draftOrder { id note2 } userErrors { field message } } }`;
+const MUT_ORDER_UPDATE = `mutation UpdateOrder($input: OrderInput!) { orderUpdate(input: $input) { order { id note tags } userErrors { field message } } }`;
+const MUT_FULFILL = `mutation Fulfill($fulfillment: FulfillmentInput!) { fulfillmentCreate(fulfillment: $fulfillment) { fulfillment { id status } userErrors { field message } } }`;
+
+const NOW = new Date();
+let ORDERS = [], DRAFTS = [], GROUPS = [], PENDING = null; // PENDING = staged action
+const paidOff = new Set(); // order ids marked paid this session
+
+// ---------- helpers ----------
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt$ = n => n.toLocaleString("en-US",{style:"currency",currency:"USD"});
+const days = iso => Math.floor((NOW - new Date(iso)) / 86400000);
+function ageClass(d){ return d>90 ? "red" : d>30 ? "amber" : "neutral"; }
+function bucketOf(d){ return d<=30?0 : d<=60?1 : d<=90?2 : 3; }
+function rawText(r){ try{ return (r.content||[]).filter(c=>c.type==="text").map(c=>c.text).join("\n"); }catch(e){ return ""; } }
+
+function unwrap(r){
+  if (r && r.isError) throw new Error(rawText(r) || "MCP tool returned an error");
+  let p = r && r.structuredContent;
+  if (!p) { const t = rawText(r); if (t) { try { p = JSON.parse(t); } catch(e){ throw new Error("Could not parse tool response: " + t.slice(0,300)); } } }
+  if (typeof p === "string") { try { p = JSON.parse(p); } catch(e){} }
+  if (p && p.data) return p.data;
+  if (p && (p.orders || p.draftOrders)) return p; // in case wrapper strips .data
+  throw new Error("Unexpected response shape: " + JSON.stringify(p).slice(0,300));
+}
+
+async function gql(query, vars){
+  const args = { query, variables: vars, first: vars.first };
+  if (vars.after) args.after = vars.after;
+  const r = await window.cowork.callMcpTool(Q_TOOL, args);
+  return unwrap(r);
+}
+
+async function fetchAll(query, rootKey){
+  let out = [], after = null, guard = 0;
+  while (guard++ < 60) {
+    const data = await gql(query, after ? {first:50, after} : {first:50});
+    const conn = data[rootKey];
+    if (!conn) throw new Error("Missing '"+rootKey+"' in response");
+    out = out.concat(conn.nodes || []);
+    if (conn.pageInfo && conn.pageInfo.hasNextPage && conn.pageInfo.endCursor) after = conn.pageInfo.endCursor;
+    else break;
+  }
+  return out;
+}
+
+// ---------- data shaping ----------
+function shapeOrder(n){
+  const owed = parseFloat(n.totalOutstandingSet?.shopMoney?.amount || "0");
+  return {
+    kind:"order", id:n.id, num:n.legacyResourceId, name:n.name,
+    created:n.createdAt, age:days(n.createdAt), owed,
+    total:parseFloat(n.totalPriceSet?.shopMoney?.amount || "0"),
+    status:n.displayFinancialStatus, cancelled:!!n.cancelledAt,
+    tags:n.tags||[], note:n.note||"",
+    email:n.customer?.defaultEmailAddress?.emailAddress || n.email || "",
+    phone:n.customer?.defaultPhoneNumber?.phoneNumber || n.phone || "",
+    custId:n.customer?.id || null,
+    custName:n.customer?.displayName || "",
+    url:`https://admin.shopify.com/store/${STORE}/orders/${n.legacyResourceId}`
+  };
+}
+function shapeDraft(n){
+  const basis = n.invoiceSentAt || n.createdAt;
+  return {
+    kind:"draft", id:n.id, num:n.legacyResourceId, name:n.name,
+    created:n.createdAt, invoiceSentAt:n.invoiceSentAt, age:days(basis),
+    owed:parseFloat(n.totalPriceSet?.shopMoney?.amount || "0"),
+    status:n.status, tags:n.tags||[], note:n.note2||"",
+    email:n.customer?.defaultEmailAddress?.emailAddress || n.email || "",
+    phone:n.customer?.defaultPhoneNumber?.phoneNumber || "",
+    custName:n.customer?.displayName || "",
+    url:`https://admin.shopify.com/store/${STORE}/draft_orders/${n.legacyResourceId}`
+  };
+}
+function groupByCustomer(orders){
+  const map = new Map();
+  for (const o of orders) {
+    const key = o.custId || (o.email || o.phone ? "anon:"+(o.email||o.phone) : "solo:"+o.id);
+    if (!map.has(key)) map.set(key, { key, name:o.custName || o.email || o.phone || "Unknown ("+o.name+")", email:o.email, phone:o.phone, orders:[], owed:0, oldest:0 });
+    const g = map.get(key);
+    g.orders.push(o);
+    g.owed += o.owed;
+    g.oldest = Math.max(g.oldest, o.age);
+    if (!g.email && o.email) g.email = o.email;
+    if (!g.phone && o.phone) g.phone = o.phone;
+  }
+  return [...map.values()];
+}
+
+// ---------- prefs ----------
+function pref(k, d){ try{ return localStorage.getItem(k) ?? d; }catch(e){ return d; } }
+function setPref(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
+let sortKey = pref(LS_SORT, "owed:desc");
+let filter = pref(LS_FILTER, "all");
+let search = "";
+const openGroups = new Set();
+
+// ---------- rendering ----------
+function render(){
+  const live = ORDERS.filter(o => !paidOff.has(o.id));
+  GROUPS = groupByCustomer(live);
+  const totalAR = live.reduce((s,o)=>s+o.owed,0);
+  const overdue = live.filter(o=>o.age>30);
+  const buckets = [ {lbl:"Current (0–30d)",a:0,c:0}, {lbl:"31–60 days",a:0,c:0}, {lbl:"61–90 days",a:0,c:0}, {lbl:"90+ days",a:0,c:0} ];
+  for (const o of live){ const b=buckets[bucketOf(o.age)]; b.a+=o.owed; b.c++; }
+  const oldest = live.reduce((m,o)=>o.age>m.age?o:m, {age:-1});
+  const biggest = GROUPS.slice().sort((x,y)=>y.owed-x.owed)[0];
+  const draftTotal = DRAFTS.reduce((s,d)=>s+d.owed,0);
+  const neverInvoiced = DRAFTS.filter(d=>!d.invoiceSentAt);
+
+  const bigShare = totalAR>0 && biggest ? biggest.owed/totalAR : 0;
+
+  let html = `
+  <div class="stats">
+    <div class="stat"><div class="lbl">Total outstanding (AR)</div><div class="val">${fmt$(totalAR)}</div><div class="note">${live.length} open orders · +${fmt$(draftTotal)} in draft limbo</div></div>
+    <div class="stat"><div class="lbl">Customers who owe</div><div class="val">${GROUPS.length}</div><div class="note">aggregated below</div></div>
+    <div class="stat"><div class="lbl">Overdue (&gt;30d)</div><div class="val">${fmt$(overdue.reduce((s,o)=>s+o.owed,0))}</div><div class="note">${overdue.length} orders past 30 days</div></div>
+    <div class="stat"><div class="lbl">Oldest invoice</div><div class="val">${oldest.age>=0?oldest.age+"d":"—"}</div><div class="note">${oldest.age>=0?esc(oldest.name)+" · "+esc(oldest.custName||"")+"":""}</div></div>
+    <div class="stat ${bigShare>0.2?"flag":""}"><div class="lbl">${bigShare>0.2?"⚠ ":""}Largest balance</div><div class="val">${biggest?fmt$(biggest.owed):"—"}</div><div class="note">${biggest?esc(biggest.name)+(bigShare>0?" · "+Math.round(bigShare*100)+"% of AR":""):""}</div></div>
+  </div>
+
+  <h2>Aging summary <span class="sub">(from order date to today)</span></h2>
+  <div class="aging">${buckets.map((b,i)=>`<div class="bucket b${i}"><div class="amt">${fmt$(b.a)}</div><div>${b.lbl}</div><div class="cnt">${b.c} order${b.c===1?"":"s"}</div></div>`).join("")}</div>
+
+  <h2>Who owes us</h2>
+  <div class="controls noprint">
+    <input type="search" id="q" placeholder="Search customer…" value="${esc(search)}">
+    ${["all","overdue","90"].map(f=>`<button class="chip ${filter===f?"on":""}" data-f="${f}">${f==="all"?"All":f==="overdue"?"Overdue >30d":"90+ only"}</button>`).join("")}
+  </div>
+  <div class="tblwrap"><table>
+    <thead><tr>
+      <th data-s="name">Customer ${arrow("name")}</th>
+      <th class="num" data-s="owed">Owed ${arrow("owed")}</th>
+      <th class="num" data-s="n">Open orders ${arrow("n")}</th>
+      <th class="num" data-s="oldest">Oldest ${arrow("oldest")}</th>
+      <th>Contact</th>
+    </tr></thead>
+    <tbody id="custBody">${renderGroups(biggest)}</tbody>
+  </table></div>
+
+  <h2>Draft-invoice limbo <span class="sub">${DRAFTS.length} unpaid drafts · ${fmt$(draftTotal)} — ${neverInvoiced.length} never even invoiced</span></h2>
+  <details class="drafts" id="draftsBox" ${pref(LS_DRAFTS_OPEN,"0")==="1"?"open":""}>
+    <summary>Show drafts <span class="pill amber">${fmt$(draftTotal)} not converted to orders</span></summary>
+    <div class="inner">${DRAFTS.length? DRAFTS.slice().sort((a,b)=>b.owed-a.owed).map(d=>orderCard(d)).join("") : `<div class="empty">No open drafts. Clean.</div>`}</div>
+  </details>`;
+
+  $("#app").innerHTML = html;
+  wire();
+}
+
+function arrow(k){
+  const [key,dir] = sortKey.split(":");
+  return key===k ? (dir==="desc"?"▾":"▴") : "";
+}
+
+function visibleGroups(){
+  let gs = GROUPS.slice();
+  if (filter==="overdue") gs = gs.filter(g=>g.oldest>30);
+  if (filter==="90") gs = gs.filter(g=>g.oldest>90);
+  if (search) { const s=search.toLowerCase(); gs = gs.filter(g=>(g.name+" "+g.email+" "+g.phone).toLowerCase().includes(s)); }
+  const [key,dir] = sortKey.split(":"); const m = dir==="desc"?-1:1;
+  gs.sort((a,b)=>{
+    let va,vb;
+    if(key==="name"){va=a.name.toLowerCase();vb=b.name.toLowerCase();return va<vb?m*-1:va>vb?m:0;}
+    if(key==="n"){va=a.orders.length;vb=b.orders.length;}
+    else if(key==="oldest"){va=a.oldest;vb=b.oldest;}
+    else {va=a.owed;vb=b.owed;}
+    return (va-vb)*m;
+  });
+  return gs;
+}
+
+function renderGroups(biggest){
+  const gs = visibleGroups();
+  if (!gs.length) return `<tr><td colspan="5" class="empty">Nothing matches. ${filter!=="all"||search?"Clear filters?":"Nobody owes you money — pop the champagne 🖤"}</td></tr>`;
+  return gs.map(g=>{
+    const cls = ageClass(g.oldest);
+    const isBig = biggest && g.key===biggest.key && gs.length>1;
+    const open = openGroups.has(g.key);
+    let row = `<tr class="cust ${open?"expanded":""} ${isBig?"biggest-row":""}" data-g="${esc(g.key)}">
+      <td><span class="caret">▸</span> <strong>${esc(g.name)}</strong>${isBig?' <span class="pill red">largest</span>':""}</td>
+      <td class="num owed">${fmt$(g.owed)}</td>
+      <td class="num">${g.orders.length}</td>
+      <td class="num"><span class="pill ${cls}">${g.oldest}d</span></td>
+      <td class="contact">${esc(g.email||"")}${g.email&&g.phone?"<br>":""}${esc(g.phone||"")}</td>
+    </tr>`;
+    if (open) row += `<tr class="detail"><td colspan="5">${g.orders.slice().sort((a,b)=>b.age-a.age).map(o=>orderCard(o)).join("")}</td></tr>`;
+    return row;
+  }).join("");
+}
+
+function orderCard(o){
+  const isDraft = o.kind==="draft";
+  const cls = ageClass(o.age);
+  const paid = paidOff.has(o.id);
+  const statusPill = paid ? `<span class="pill green">PAID ✓</span>`
+    : isDraft ? (o.invoiceSentAt ? `<span class="pill amber">invoice sent ${days(o.invoiceSentAt)}d ago</span>` : `<span class="pill red">never invoiced</span>`)
+    : `<span class="pill gray">${esc(o.status)}</span>`;
+  return `<div class="ocard ${paid?"paid":""}" data-id="${esc(o.id)}">
+    <div class="top">
+      <div><a href="${o.url}" target="_blank" rel="noopener"><strong>${esc(o.name)}</strong></a>
+        ${isDraft&&o.custName?` · ${esc(o.custName)}`:""}
+        ${statusPill}
+        <span class="pill ${cls}">${o.age}d</span></div>
+      <div class="owed">${paid?"<s>":""}${fmt$(o.owed)}${paid?"</s>":""}</div>
+    </div>
+    <div class="tags">${esc(new Date(o.created).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}))}${o.total!==o.owed&&!isDraft?` · ${fmt$(o.total)} total, ${fmt$(o.owed)} unpaid`:""}${o.tags.length?" · "+esc(o.tags.join(", ")):""}${isDraft&&(o.email||o.phone)?" · "+esc(o.email||o.phone):""}</div>
+    ${o.note?`<div class="onote">📝 ${esc(o.note)}</div>`:""}
+    ${paid?"":actionBox(o)}
+  </div>`;
+}
+
+function actionBox(o){
+  const isDraft = o.kind==="draft";
+  return `<div class="act noprint" data-act="${esc(o.id)}">
+    <div class="row">
+      <input type="text" placeholder='Do something… e.g. "mark paid", "send reminder", "note: called, promised Friday"'>
+      <button class="primary pv">Preview</button>
+    </div>
+    <div class="row" style="margin-top:6px">
+      ${isDraft?"":`<button class="quick" data-q="mark paid">✓ Mark paid</button>`}
+      <button class="quick" data-q="${isDraft&&!o.invoiceSentAt?"send invoice":"send reminder"}">✉ ${isDraft?(o.invoiceSentAt?"Re-send invoice":"Send invoice"):"Send reminder"}</button>
+      <button class="quick" data-q="note: ">📝 Add note</button>
+    </div>
+    <div class="pvout"></div>
+  </div>`;
+}
+
+// ---------- action parsing & staging ----------
+function findRec(id){ return ORDERS.find(o=>o.id===id) || DRAFTS.find(d=>d.id===id) || FORDERS.find(f=>f.id===id); }
+
+function parseInstruction(text, o){
+  const t = text.trim();
+  if (!t) return null;
+  const isDraft = o.kind==="draft";
+  const noteM = t.match(/^(?:add\s+)?note[:\-\s]+([\s\S]+)/i);
+  if (noteM) return stageNote(o, noteM[1].trim());
+  if (/\b(mark|record|got|received)\b.*\b(paid|payment|cash|check)\b|^paid\b/i.test(t)) {
+    if (isDraft) return { error:"Drafts can't be marked paid via the API — collect payment / complete the draft in Shopify admin: " + o.url };
+    return stageMarkPaid(o);
+  }
+  if (/\b(remind|reminder|invoice|resend|re-send|send|chase)\b/i.test(t)) {
+    const msgM = t.match(/"([^"]+)"|'([^']+)'/);
+    return stageInvoice(o, msgM ? (msgM[1]||msgM[2]) : null);
+  }
+  return { error:'Couldn\'t parse that. Try "mark paid", "send reminder" (add a custom message in quotes), or "note: your text".' };
+}
+
+function stageMarkPaid(o){
+  return {
+    title:`Mark ${o.name} as paid`,
+    impact:`Records the full outstanding ${fmt$(o.owed)} as paid (manual payment) for ${esc(o.custName||o.email||o.phone||"this customer")}. Financial status → PAID. This is how you log cash/check collected outside Shopify.`,
+    warn:o.status==="PARTIALLY_PAID"?`Order is partially paid — this marks the remaining ${fmt$(o.owed)} paid.`:null,
+    mutation:MUT_MARK_PAID, vars:{ input:{ id:o.id } }, mutName:"orderMarkAsPaid",
+    onSuccess:()=>{ paidOff.add(o.id); render(); }
+  };
+}
+function stageInvoice(o, msg){
+  const isDraft = o.kind==="draft";
+  return {
+    title: isDraft ? `${o.invoiceSentAt?"Re-send":"Send"} invoice for draft ${o.name}` : `Email payment reminder for ${o.name}`,
+    impact:`Shopify emails the ${isDraft?"draft invoice":"order invoice (pay-now link)"} for ${fmt$(o.owed)} to ${o.email?esc(o.email):"the customer on file"}${msg?` with your message: “${esc(msg)}”`:""}.`,
+    warn: !o.email ? "No email visible on this record — Shopify will error if the customer has no email address. Phone-only customers need a text from Bianca instead." : null,
+    mutation: isDraft?MUT_DRAFT_INVOICE:MUT_ORDER_INVOICE,
+    vars: isDraft ? { id:o.id, email: msg?{customMessage:msg}:null } : { orderId:o.id, email: msg?{customMessage:msg}:null },
+    mutName: isDraft?"draftOrderInvoiceSend":"orderInvoiceSend",
+    onSuccess:()=>{ if(isDraft){ o.invoiceSentAt = new Date().toISOString(); render(); } }
+  };
+}
+function stageNote(o, text){
+  const isDraft = o.kind==="draft";
+  const combined = (o.note ? o.note + "\n" : "") + text;
+  return {
+    title:`Add note to ${o.name}`,
+    impact:`Appends to the ${isDraft?"draft":"order"} note. New note will read:\n“${esc(combined)}”`,
+    warn: o.note ? "The API replaces the whole note — your text is appended to the existing note shown above." : null,
+    mutation: isDraft?MUT_DRAFT_NOTE:MUT_ORDER_NOTE,
+    vars: isDraft ? { id:o.id, input:{ note:combined } } : { input:{ id:o.id, note:combined } },
+    mutName: isDraft?"draftOrderUpdate":"orderUpdate",
+    onSuccess:()=>{ o.note = combined; if(o.kind==="forder") renderF(); else render(); }
+  };
+}
+
+function showPreview(box, staged){
+  const out = box.querySelector(".pvout");
+  if (!staged) return;
+  if (staged.error) { out.innerHTML = `<div class="result-err">${esc(staged.error)}</div>`; return; }
+  PENDING = staged;
+  out.innerHTML = `<div class="preview">
+    <div class="ptitle">Preview — nothing sent yet</div>
+    <div class="impact" style="white-space:pre-wrap">${staged.impact}</div>
+    ${staged.warn?`<div class="warn">⚠ ${staged.warn}</div>`:""}
+    <pre>${esc(staged.mutation)}\n\nvariables = ${esc(JSON.stringify(staged.vars,null,2))}</pre>
+    <button class="danger-ok cf">Confirm & write to Shopify</button>
+    <button class="cx">Cancel</button>
+    <div class="cfout"></div>
+  </div>`;
+  out.querySelector(".cx").onclick = ()=>{ PENDING=null; out.innerHTML=""; };
+  out.querySelector(".cf").onclick = async (ev)=>{
+    const btn = ev.target, cfout = out.querySelector(".cfout");
+    btn.disabled = true; btn.textContent = "Writing…";
+    try {
+      const r = await window.cowork.callMcpTool(M_TOOL, { query:staged.mutation, variables:staged.vars });
+      if (r && r.isError) throw new Error(rawText(r) || "Mutation failed — the connector may lack the required write scope, or this mutation is blocked. Do it in Shopify admin instead.");
+      const data = unwrap(r);
+      const payload = data[staged.mutName];
+      const errs = payload && payload.userErrors;
+      if (errs && errs.length) throw new Error("Shopify rejected it:\n" + errs.map(e=>"• "+(e.field?e.field.join?e.field.join("."):e.field:"")+" "+e.message).join("\n"));
+      cfout.innerHTML = `<div class="result-ok">✓ Done — written to Shopify.</div>`;
+      setTimeout(()=>{ PENDING=null; if(staged.onSuccess) staged.onSuccess(); }, 700);
+    } catch(e){
+      btn.disabled = false; btn.textContent = "Confirm & write to Shopify";
+      cfout.innerHTML = `<div class="result-err">✗ ${esc(e.message)}</div>`;
+    }
+  };
+}
+
+// ---------- wiring (Collections) ----------
+function wire(){
+  $("#q")?.addEventListener("input", e=>{ search = e.target.value; $("#custBody").innerHTML = renderGroups(GROUPS.slice().sort((x,y)=>y.owed-x.owed)[0]); wireRows(); });
+  document.querySelectorAll("#app .chip").forEach(c=>c.onclick=()=>{ filter=c.dataset.f; setPref(LS_FILTER,filter); render(); });
+  document.querySelectorAll("#app th[data-s]").forEach(th=>th.onclick=()=>{
+    const k = th.dataset.s, [ck,cd] = sortKey.split(":");
+    sortKey = k+":"+(ck===k && cd==="desc" ? "asc" : "desc");
+    setPref(LS_SORT, sortKey); render();
+  });
+  const db = $("#draftsBox");
+  if (db) db.addEventListener("toggle", ()=>setPref(LS_DRAFTS_OPEN, db.open?"1":"0"));
+  wireRows(); wireActs();
+}
+function wireRows(){
+  document.querySelectorAll("#app tr.cust").forEach(tr=>tr.onclick=(e)=>{
+    if (e.target.closest("a")) return;
+    const k = tr.dataset.g;
+    openGroups.has(k) ? openGroups.delete(k) : openGroups.add(k);
+    render();
+  });
+  wireActs();
+}
+function wireActs(){
+  document.querySelectorAll("#app .act").forEach(box=>{
+    if (box._wired) return; box._wired = true;
+    const o = findRec(box.dataset.act);
+    if (!o) return;
+    const input = box.querySelector("input");
+    const go = ()=>showPreview(box, parseInstruction(input.value, o));
+    box.querySelector(".pv").onclick = go;
+    input.addEventListener("keydown", e=>{ if(e.key==="Enter") go(); });
+    box.querySelectorAll(".quick").forEach(q=>q.onclick=()=>{
+      input.value = q.dataset.q;
+      if (q.dataset.q.startsWith("note")) input.focus(); else go();
+    });
+    box.addEventListener("click", e=>e.stopPropagation());
+  });
+}
+
+// expand everything for a clean printout
+window.addEventListener("beforeprint", ()=>{
+  GROUPS.forEach(g=>openGroups.add(g.key));
+  const db = document.getElementById("draftsBox"); if (db) db.open = true;
+  render();
+});
+
+// =========================================================
+//  FULFILLMENT TAB — paid, not delivered ("what we owe")
+// =========================================================
+let FORDERS = [], FGROUPS = [], fBooted = false;
+const fulfilledOff = new Set(), fFlagged = new Set(), openF = new Set();
+let fSort = "owed:desc", fFilter = "all", fSearch = "";
+
+function shapeF(n){
+  const val = parseFloat(n.totalPriceSet?.shopMoney?.amount || "0");
+  return {
+    kind:"forder", id:n.id, num:n.legacyResourceId, name:n.name,
+    created:n.createdAt, age:days(n.createdAt), owed:val, value:val,
+    ffStatus:n.displayFulfillmentStatus, finStatus:n.displayFinancialStatus,
+    cancelled:!!n.cancelledAt, tags:n.tags||[], note:n.note||"",
+    email:n.customer?.defaultEmailAddress?.emailAddress || n.email || "",
+    phone:n.customer?.defaultPhoneNumber?.phoneNumber || n.phone || "",
+    custId:n.customer?.id || null, custName:n.customer?.displayName || "",
+    fos:(n.fulfillmentOrders?.nodes||[]).map(f=>({id:f.id,status:f.status})),
+    url:`https://admin.shopify.com/store/${STORE}/orders/${n.legacyResourceId}`
+  };
+}
+
+async function bootF(){
+  if (fBooted) return; fBooted = true;
+  try {
+    const nodes = await fetchAll(FORDERS_Q, "orders");
+    FORDERS = nodes.map(shapeF).filter(o => !o.cancelled && o.value > 0.009);
+    renderF();
+  } catch(e){
+    $("#appF").innerHTML = `<div class="errbox">Couldn't load fulfillment from Shopify:\n${esc(e.message)}\n\nSwitch tabs and back to retry, or hit Reload.</div>`;
+  }
+}
+
+function fVisibleGroups(){
+  let gs = FGROUPS.slice();
+  if (fFilter==="90") gs = gs.filter(g=>g.oldest>90);
+  if (fFilter==="partial") gs = gs.filter(g=>g.orders.some(o=>o.ffStatus==="PARTIALLY_FULFILLED"));
+  if (fSearch) { const s=fSearch.toLowerCase(); gs = gs.filter(g=>(g.name+" "+g.email+" "+g.phone).toLowerCase().includes(s)); }
+  const [key,dir] = fSort.split(":"); const m = dir==="desc"?-1:1;
+  gs.sort((a,b)=>{
+    let va,vb;
+    if(key==="name"){va=a.name.toLowerCase();vb=b.name.toLowerCase();return va<vb?m*-1:va>vb?m:0;}
+    if(key==="n"){va=a.orders.length;vb=b.orders.length;}
+    else if(key==="oldest"){va=a.oldest;vb=b.oldest;}
+    else {va=a.owed;vb=b.owed;}
+    return (va-vb)*m;
+  });
+  return gs;
+}
+function farrow(k){ const [key,dir]=fSort.split(":"); return key===k?(dir==="desc"?"▾":"▴"):""; }
+
+function renderF(){
+  const live = FORDERS.filter(o => !fulfilledOff.has(o.id) && !fFlagged.has(o.id));
+  FGROUPS = groupByCustomer(live);
+  const totalVal = live.reduce((s,o)=>s+o.value,0);
+  const buckets = [ {lbl:"0–30d (deliver now)",a:0,c:0}, {lbl:"31–60 days",a:0,c:0}, {lbl:"61–90 days",a:0,c:0}, {lbl:"90+ (likely dead)",a:0,c:0} ];
+  for (const o of live){ const b=buckets[bucketOf(o.age)]; b.a+=o.value; b.c++; }
+  const oldest = live.reduce((m,o)=>o.age>m.age?o:m, {age:-1});
+  const dead = live.filter(o=>o.age>90);
+  const partial = live.filter(o=>o.ffStatus==="PARTIALLY_FULFILLED");
+  const biggest = FGROUPS.slice().sort((x,y)=>y.owed-x.owed)[0];
+
+  let html = `
+  <div class="stats">
+    <div class="stat"><div class="lbl">Undelivered value</div><div class="val">${fmt$(totalVal)}</div><div class="note">${live.length} paid orders awaiting delivery</div></div>
+    <div class="stat"><div class="lbl">Customers waiting</div><div class="val">${FGROUPS.length}</div><div class="note">service risk — "where's my order"</div></div>
+    <div class="stat ${dead.length?"flag":""}"><div class="lbl">${dead.length?"⚠ ":""}Aged 90+ (likely dead)</div><div class="val">${fmt$(dead.reduce((s,o)=>s+o.value,0))}</div><div class="note">${dead.length} orders — refund/close, don't ship old straw</div></div>
+    <div class="stat"><div class="lbl">Oldest undelivered</div><div class="val">${oldest.age>=0?oldest.age+"d":"—"}</div><div class="note">${oldest.age>=0?esc(oldest.name)+" · "+esc(oldest.custName||""):""}</div></div>
+    <div class="stat"><div class="lbl">Partially fulfilled</div><div class="val">${partial.length}</div><div class="note">some lines shipped, some not</div></div>
+  </div>
+
+  <h2>Aging queue <span class="sub">(recent = deliver fast · old = refund/close)</span></h2>
+  <div class="aging">${buckets.map((b,i)=>`<div class="bucket b${i}"><div class="amt">${fmt$(b.a)}</div><div>${b.lbl}</div><div class="cnt">${b.c} order${b.c===1?"":"s"}</div></div>`).join("")}</div>
+
+  <h2>What we owe — by customer</h2>
+  <div class="controls noprint">
+    <input type="search" id="fq" placeholder="Search customer…" value="${esc(fSearch)}">
+    ${["all","90","partial"].map(f=>`<button class="chip ${fFilter===f?"on":""}" data-f="${f}">${f==="all"?"All":f==="90"?"90+ (dead pile)":"Partial"}</button>`).join("")}
+  </div>
+  <div class="tblwrap"><table>
+    <thead><tr>
+      <th data-s="name">Customer ${farrow("name")}</th>
+      <th class="num" data-s="owed">Undelivered $ ${farrow("owed")}</th>
+      <th class="num" data-s="n">Orders ${farrow("n")}</th>
+      <th class="num" data-s="oldest">Oldest ${farrow("oldest")}</th>
+      <th>Contact</th>
+    </tr></thead>
+    <tbody id="fcustBody">${fRenderGroups(biggest)}</tbody>
+  </table></div>`;
+
+  $("#appF").innerHTML = html;
+  fWire();
+}
+
+function fRenderGroups(biggest){
+  const gs = fVisibleGroups();
+  if (!gs.length) return `<tr><td colspan="5" class="empty">Nothing matches. ${fFilter!=="all"||fSearch?"Clear filters?":"Nothing undelivered — everything's out the door 🖤"}</td></tr>`;
+  return gs.map(g=>{
+    const cls = ageClass(g.oldest);
+    const isBig = biggest && g.key===biggest.key && gs.length>1;
+    const open = openF.has(g.key);
+    let row = `<tr class="cust ${open?"expanded":""} ${isBig?"biggest-row":""}" data-g="${esc(g.key)}">
+      <td><span class="caret">▸</span> <strong>${esc(g.name)}</strong>${isBig?' <span class="pill red">biggest</span>':""}</td>
+      <td class="num owed">${fmt$(g.owed)}</td>
+      <td class="num">${g.orders.length}</td>
+      <td class="num"><span class="pill ${cls}">${g.oldest}d</span></td>
+      <td class="contact">${esc(g.email||"")}${g.email&&g.phone?"<br>":""}${esc(g.phone||"")}</td>
+    </tr>`;
+    if (open) row += `<tr class="detail"><td colspan="5">${g.orders.slice().sort((a,b)=>b.age-a.age).map(o=>fOrderCard(o)).join("")}</td></tr>`;
+    return row;
+  }).join("");
+}
+
+function fOrderCard(o){
+  const cls = ageClass(o.age);
+  const done = fulfilledOff.has(o.id), flagged = fFlagged.has(o.id);
+  const statusPill = done ? `<span class="pill green">DELIVERED ✓</span>`
+    : flagged ? `<span class="pill red">FLAGGED refund/close</span>`
+    : o.ffStatus==="PARTIALLY_FULFILLED" ? `<span class="pill amber">partially fulfilled</span>`
+    : `<span class="pill gray">unfulfilled</span>`;
+  const deadTag = o.age>90 ? ' <span class="pill red">likely dead</span>' : "";
+  return `<div class="ocard ${done?"paid":""} ${flagged?"flagged":""}" data-id="${esc(o.id)}">
+    <div class="top">
+      <div><a href="${o.url}" target="_blank" rel="noopener"><strong>${esc(o.name)}</strong></a>
+        ${statusPill} <span class="pill ${cls}">${o.age}d</span>${deadTag}</div>
+      <div class="owed">${done?"<s>":""}${fmt$(o.value)}${done?"</s>":""}</div>
+    </div>
+    <div class="tags">${esc(new Date(o.created).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}))}${o.tags.length?" · "+esc(o.tags.join(", ")):""}${o.email||o.phone?" · "+esc(o.email||o.phone):""}</div>
+    ${o.note?`<div class="onote">📝 ${esc(o.note)}</div>`:""}
+    ${done||flagged?"":fActionBox(o)}
+  </div>`;
+}
+
+function fActionBox(o){
+  return `<div class="act noprint" data-act="${esc(o.id)}">
+    <div class="row">
+      <input type="text" placeholder='Do something… e.g. "mark delivered", "flag refund/close: year old", "note: driver out Fri"'>
+      <button class="primary pv">Preview</button>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <button class="quick" data-q="mark delivered">✓ Mark delivered</button>
+      <button class="quick" data-q="flag refund/close: ">⚑ Flag refund/close</button>
+      <button class="quick" data-q="note: ">📝 Add note</button>
+    </div>
+    <div class="pvout"></div>
+  </div>`;
+}
+
+function parseFulfill(text, o){
+  const t = text.trim();
+  if (!t) return null;
+  const noteM = t.match(/^(?:add\s+)?note[:\-\s]+([\s\S]+)/i);
+  if (noteM) return stageNote(o, noteM[1].trim());
+  if (/\b(flag|refund|close|cancel|dead|kill)\b/i.test(t)) {
+    const reason = t.replace(/^.*?(flag\s*(?:for)?\s*refund\/close|flag|refund\/close|refund|close|cancel|dead|kill)[:\-\s]*/i,"").trim();
+    return stageFlag(o, reason);
+  }
+  if (/\b(fulfil|fulfill|deliver|delivered|ship|shipped|mark|done|complete)\b/i.test(t)) return stageFulfill(o);
+  return { error:'Try "mark delivered", "flag refund/close: reason", or "note: your text".' };
+}
+
+function stageFulfill(o){
+  const open = o.fos.filter(f=>f.status==="OPEN");
+  if (!open.length) return { error:"No open fulfillment lines on "+o.name+" — it may already be fulfilled or on hold. Handle in admin: "+o.url };
+  const lineItems = open.map(f=>({ fulfillmentOrderId:f.id }));
+  return {
+    title:`Mark ${o.name} delivered`,
+    impact:`Marks all open lines on ${o.name} (${fmt$(o.value)}) as fulfilled/delivered for ${esc(o.custName||o.email||o.phone||"this customer")}. No tracking added. Customer will NOT be auto-notified.`,
+    warn: o.age>90 ? `This order is ${o.age} days old — if it's actually dead, flag refund/close instead of shipping year-old straw.` : null,
+    mutation:MUT_FULFILL,
+    vars:{ fulfillment:{ lineItemsByFulfillmentOrder: lineItems, notifyCustomer:false } },
+    mutName:"fulfillmentCreate",
+    onSuccess:()=>{ fulfilledOff.add(o.id); renderF(); }
+  };
+}
+function stageFlag(o, reason){
+  const tag = "r2-refund-close";
+  const newTags = Array.from(new Set([...(o.tags||[]), tag]));
+  const noteAdd = "⚑ FLAG refund/close" + (reason ? ": "+reason : "");
+  const combined = (o.note ? o.note+"\n" : "") + noteAdd;
+  return {
+    title:`Flag ${o.name} for refund/close`,
+    impact:`Tags the order “${tag}” and appends note “${esc(noteAdd)}”. This does NOT refund or cancel — it flags the order for your R2 review and pulls it out of the deliver queue in this view.`,
+    warn: "Does not move money. Actual refund/cancel still happens in Shopify admin once you decide.",
+    mutation:MUT_ORDER_UPDATE,
+    vars:{ input:{ id:o.id, tags:newTags, note:combined } },
+    mutName:"orderUpdate",
+    onSuccess:()=>{ o.tags=newTags; o.note=combined; fFlagged.add(o.id); renderF(); }
+  };
+}
+
+function fWire(){
+  const q = $("#fq");
+  if (q) q.addEventListener("input", e=>{ fSearch = e.target.value; $("#fcustBody").innerHTML = fRenderGroups(FGROUPS.slice().sort((x,y)=>y.owed-x.owed)[0]); fWireRows(); });
+  document.querySelectorAll("#appF .chip").forEach(c=>c.onclick=()=>{ fFilter=c.dataset.f; renderF(); });
+  document.querySelectorAll("#appF th[data-s]").forEach(th=>th.onclick=()=>{
+    const k=th.dataset.s, [ck,cd]=fSort.split(":");
+    fSort = k+":"+(ck===k && cd==="desc" ? "asc" : "desc"); renderF();
+  });
+  fWireRows();
+}
+function fWireRows(){
+  document.querySelectorAll("#appF tr.cust").forEach(tr=>tr.onclick=(e)=>{
+    if (e.target.closest("a")) return;
+    const k = tr.dataset.g;
+    openF.has(k) ? openF.delete(k) : openF.add(k);
+    renderF();
+  });
+  fWireActs();
+}
+function fWireActs(){
+  document.querySelectorAll("#appF .act").forEach(box=>{
+    if (box._wired) return; box._wired = true;
+    const o = FORDERS.find(x=>x.id===box.dataset.act);
+    if (!o) return;
+    const input = box.querySelector("input");
+    const go = ()=>showPreview(box, parseFulfill(input.value, o));
+    box.querySelector(".pv").onclick = go;
+    input.addEventListener("keydown", e=>{ if(e.key==="Enter") go(); });
+    box.querySelectorAll(".quick").forEach(q=>q.onclick=()=>{
+      input.value = q.dataset.q;
+      if (q.dataset.q.startsWith("note") || q.dataset.q.startsWith("flag")) input.focus(); else go();
+    });
+    box.addEventListener("click", e=>e.stopPropagation());
+  });
+}
+
+// ---------- tabs ----------
+function showTab(t){
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on", b.dataset.tab===t));
+  $("#app").style.display = t==="collections" ? "" : "none";
+  $("#appF").style.display = t==="fulfillment" ? "" : "none";
+  if (t==="fulfillment") bootF();
+}
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+
+// ---------- boot ----------
+(async function(){
+  try {
+    const [orderNodes, draftNodes] = await Promise.all([ fetchAll(ORDERS_Q,"orders"), fetchAll(DRAFTS_Q,"draftOrders") ]);
+    ORDERS = orderNodes.map(shapeOrder).filter(o => !o.cancelled && o.owed > 0.009);
+    DRAFTS = draftNodes.map(shapeDraft).filter(d => d.owed > 0.009);
+    $("#asof").textContent = `Live from Shopify · fetched ${NOW.toLocaleString("en-US",{weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})} · aging measured to today`;
+    render();
+  } catch(e){
+    $("#app").innerHTML = `<div class="errbox">Couldn't load from Shopify:\n${esc(e.message)}\n\nHit Reload in the header to retry. If it keeps failing, the Shopify connector may need re-auth.</div>`;
+  }
+})();
+</script>
+</body>
+</html>
